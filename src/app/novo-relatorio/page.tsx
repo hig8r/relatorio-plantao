@@ -221,7 +221,7 @@ export default function NovoRelatorioPage() {
               {/* Plantonista */}
               <Field label="Nome do Plantonista / Responsável" required>
                 <input type="text" value={plantonista} onChange={e => setPlantonista(e.target.value)}
-                  placeholder="Ex: Carlos Mendes"
+                  placeholder="Ex: Shaolin Matador de Porco"
                   className="px-3 py-2.5 text-sm" />
               </Field>
 
