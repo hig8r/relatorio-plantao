@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, ClipboardList, Shield } from 'lucide-react';
+import { FilePlus, ClipboardList, Shield, CalendarDays } from 'lucide-react';
 
 export default function Header() {
   const path = usePathname();
