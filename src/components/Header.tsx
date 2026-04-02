@@ -45,6 +45,15 @@ export default function Header() {
             <ClipboardList size={15} />
             <span className="hidden sm:inline font-medium">Consultar</span>
           </Link>
+          <Link href="/escala"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all"
+            style={{
+              background: path === '/escala' ? 'rgba(99,102,241,0.15)' : 'transparent',
+              color: path === '/escala' ? 'var(--accent3)' : 'var(--muted)',
+           }}>
+          <CalendarDays size={15} />
+          <0span className="hidden sm:inline font-medium">Escala</span>
+          </Link>
         </nav>
       </div>
     </header>
