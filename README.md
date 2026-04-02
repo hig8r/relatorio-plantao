@@ -1,7 +1,3 @@
-Claro! Aqui está:
-
----
-
 # Relatório de Plantão 🌙
 
 Sistema para registrar e consultar os relatórios do plantão das 08h às 13h.
