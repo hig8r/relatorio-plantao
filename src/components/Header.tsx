@@ -21,7 +21,7 @@ export default function Header() {
           </div>
           <div className="leading-tight">
             <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>Plantão</p>
-            <p className="text-[10px]" style={{ color: 'var(--muted)' }}>08:00 – 13:00</p>
+            <p className="text-[10px]" style={{ color: 'var(--muted)' }}>TIME DE SUPORTE T.I</p>
           </div>
         </div>
 
