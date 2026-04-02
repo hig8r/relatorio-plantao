@@ -52,7 +52,7 @@ export default function Header() {
               color: path === '/escala' ? 'var(--accent3)' : 'var(--muted)',
            }}>
           <CalendarDays size={15} />
-          <0span className="hidden sm:inline font-medium">Escala</span>
+          <span className="hidden sm:inline font-medium">Escala</span>
           </Link>
         </nav>
       </div>
