@@ -13,12 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// COMPONENTE: StatusBadge
-// Exibe um badge colorido com ícone para o status do plantão
-//   Normal  → verde  com ✓
-//   Alerta  → amarelo com ⚠
-//   Crítico → vermelho com ⊗
-
+/* ── badge component ── */
 function StatusBadge({ s }: { s: StatusPlantao }) {
   const map = {
     'Normal':  { bg: 'var(--green-bg)',  color: 'var(--green)',  bd: 'var(--green-bd)',  icon: <CheckCircle2 size={10}/> },
@@ -34,12 +29,7 @@ function StatusBadge({ s }: { s: StatusPlantao }) {
   );
 }
 
-// COMPONENTE: PrintView
-// Versão do relatório formatada para impressão (preciso ajustar)
-// Fica invisível na tela (display:none) e só aparece ao imprimir
-// Contém: número, data, horário, plantonista, status,
-//         lista de ocorrências e observações
-
+/* ── print-friendly single report ── */
 function PrintView({ r }: { r: Relatorio }) {
   return (
     <div className="print-only" style={{ display: 'none', fontFamily: 'Arial, sans-serif', color: '#000', padding: 0 }}>
@@ -77,20 +67,13 @@ function PrintView({ r }: { r: Relatorio }) {
   );
 }
 
-// COMPONENTE: RelatorioRow
-// Uma linha da tabela que pode ser expandida ao clicar
-// Fechada, exibe: número (#0001), data, plantonista, horário, status, badge "X altas"
-// Aberta (expandida), exibe: lista completa de ocorrências com severidade e horário, observações gerais e botão "Imprimir este relatório"
-// Prop onPrint → função chamada ao clicar em imprimir, abre uma janela nova formatada para impressão
-
+/* ── expandable row ── */
 function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) => void }) {
   const [open, setOpen] = useState(false);
-  // Conta quantas ocorrências têm severidade Alta para mostrar o badge vermelho
   const ocAlta = r.ocorrencias.filter(o => o.severidade === 'Alta').length;
 
   return (
     <>
-      {/* Linha principal — clicável para expandir/recolher */}
       <div
         className="grid gap-2 px-4 py-3.5 cursor-pointer transition-colors"
         style={{ gridTemplateColumns: '72px 1fr 110px 32px' }}
@@ -98,22 +81,19 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
         onMouseOver={e => { if (!open) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.02)'; }}
         onMouseOut={e => { if (!open) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
       >
-        {/* Coluna 1: número do relatório */}
+        {/* # */}
         <div className="flex items-center">
           <span className="font-mono text-xs" style={{ color: 'var(--muted)' }}>
             #{String(r.numero).padStart(4,'0')}
           </span>
         </div>
 
-        {/* Coluna 2: data + plantonista + resumo */}
+        {/* Date + plantonista */}
         <div className="flex flex-col justify-center min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Converte a data para "segunda-feira, 07 de abril"
-                O T12:00:00 evita que o JavaScript mude o dia por causa do fuso horário */}
             <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {format(parseISO(r.data + 'T12:00:00'), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </span>
-            {/* Badge vermelho aparece só se tiver ocorrências de alta severidade */}
             {ocAlta > 0 && (
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                 style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red-bd)' }}>
@@ -136,21 +116,21 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
           </div>
         </div>
 
-        {/* Coluna 3: badge de status */}
+        {/* Status */}
         <div className="flex items-center"><StatusBadge s={r.status}/></div>
 
-        {/* Coluna 4: seta que indica aberto/fechado */}
+        {/* Chevron */}
         <div className="flex items-center justify-center" style={{ color: 'var(--muted2)' }}>
           {open ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
         </div>
       </div>
 
-      {/* Detalhe expandido — só aparece quando open === true */}
+      {/* ── Expanded detail ── */}
       {open && (
         <div className="px-4 pb-5 fade-in"
           style={{ background: 'var(--surface2)', borderTop: '1px solid var(--border)' }}>
 
-          {/* Seção de ocorrências */}
+          {/* Ocorrências */}
           <div className="pt-4">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--muted2)' }}>
               Ocorrências ({r.ocorrencias.length})
@@ -166,7 +146,6 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
                     style={{
                       background: 'var(--surface)',
                       border: '1px solid var(--border)',
-                      // Borda esquerda colorida por severidade
                       borderLeft: `3px solid ${oc.severidade === 'Alta' ? 'var(--red)' : oc.severidade === 'Média' ? 'var(--yellow)' : 'var(--green)'}`,
                     }}>
                     <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -191,7 +170,7 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
             )}
           </div>
 
-          {/* Observações gerais — só aparece se preenchido */}
+          {/* Observações */}
           {r.observacoes && (
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted2)' }}>
@@ -203,7 +182,7 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
             </div>
           )}
 
-          {/* Botão de impressão individual */}
+          {/* Actions */}
           <div className="flex justify-end mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
             <button onClick={() => onPrint(r)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -219,23 +198,7 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
   );
 }
 
-// PÁGINA PRINCIPAL: RelatoriosPage
-// Tela de consulta de todos os relatórios salvos
-// Estados principais:
-//   relatorios       → lista de relatórios carregados do banco
-//   loading          → true enquanto busca os dados
-//   total            → total de registros no banco (incluindo filtrados)
-//   showFilters      → controla se o painel de filtros está aberto
-//   printRef         → referência ao relatório sendo impresso
-
-// Filtros disponíveis:
-//   busca            → busca por texto (plantonista ou observações)
-//   filtroStatus     → Normal / Alerta / Crítico / todos
-//   filtroPlantonista → busca por nome do plantonista
-//   dataInicio       → data mínima do período
-//   dataFim          → data máxima do período
-//   sortDir          → 'desc' (mais recentes) ou 'asc' (mais antigos)
-
+/* ════════════ MAIN PAGE ════════════ */
 export default function RelatoriosPage() {
   const router = useRouter();
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -251,23 +214,17 @@ export default function RelatoriosPage() {
   const [dataFim, setDataFim] = useState('');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc');
 
-  // Conta quantos filtros estão ativos para mostrar o número no botão
   const activeCount = [filtroStatus, filtroPlantonista, dataInicio, dataFim, busca].filter(Boolean).length;
 
-  // ── Busca os relatórios no Supabase com os filtros aplicados ──
-  // useCallback evita que a função seja recriada desnecessariamente
-  // só recria quando algum filtro muda
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       let q = supabase.from('relatorios').select('*', { count: 'exact' });
-      // Aplica cada filtro só se estiver preenchido
       if (filtroStatus)       q = q.eq('status', filtroStatus);
       if (filtroPlantonista)  q = q.ilike('plantonista', `%${filtroPlantonista}%`);
       if (busca)              q = q.or(`plantonista.ilike.%${busca}%,observacoes.ilike.%${busca}%`);
       if (dataInicio)         q = q.gte('data', dataInicio);
       if (dataFim)            q = q.lte('data', dataFim);
-      // Ordena por data e depois por número (desempate)
       q = q.order('data', { ascending: sortDir === 'asc' }).order('numero', { ascending: sortDir === 'asc' });
       const { data, error, count } = await q;
       if (error) throw error;
@@ -277,19 +234,17 @@ export default function RelatoriosPage() {
     finally { setLoading(false); }
   }, [filtroStatus, filtroPlantonista, busca, dataInicio, dataFim, sortDir]);
 
-  // Toda vez que um filtro muda, busca os dados novamente automaticamente
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Limpa todos os filtros de uma vez
   function clearFilters() {
     setBusca(''); setFiltroStatus(''); setFiltroPlantonista('');
     setDataInicio(''); setDataFim('');
   }
 
-  // ── Impressão de um relatório individual ──
-  // Abre uma janela nova com HTML formatado e chama window.print()
+  /* Print single report */
   function handlePrint(r: Relatorio) {
     printRef.current = r;
+    // Build printable HTML
     const ocHtml = r.ocorrencias.length === 0
       ? '<p>Nenhuma ocorrência registrada neste plantão.</p>'
       : r.ocorrencias.map(oc => `
@@ -325,12 +280,10 @@ export default function RelatoriosPage() {
     win.document.write(html);
     win.document.close();
     win.focus();
-    // Pequeno delay para garantir que o HTML carregou antes de imprimir
     setTimeout(() => { win.print(); win.close(); }, 300);
   }
 
-  // ── Exportar lista completa (todos os resultados filtrados) ──
-  // Gera uma tabela HTML e abre para impressão
+  /* Print full list */
   function handlePrintList() {
     const rows = relatorios.map(r => `
       <tr>
@@ -361,7 +314,7 @@ export default function RelatoriosPage() {
     setTimeout(() => { win.print(); win.close(); }, 300);
   }
 
-  // Cards de estatísticas calculados a partir dos dados carregados
+  /* Stats */
   const stats = {
     normal:  relatorios.filter(r => r.status === 'Normal').length,
     alerta:  relatorios.filter(r => r.status === 'Alerta').length,
@@ -369,20 +322,13 @@ export default function RelatoriosPage() {
     ocTotal: relatorios.reduce((a, r) => a + r.ocorrencias.length, 0),
   };
 
-  // RENDER DA PÁGINA
-  // Estrutura:
-  //   1. Título + botão "Novo Relatório"
-  //   2. Cards de estatísticas (Total, Normal, Alerta, Crítico)
-  //   3. Barra de busca + botões (Filtros, Ordenar, Atualizar)
-  //   4. Painel de filtros expansível (Status, Plantonista, Datas)
-  //   5. Tabela com linhas expansíveis
-
+  /* ── render ── */
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Header/>
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6 screen-only">
 
-        {/* 1. Título */}
+        {/* Title row */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Relatórios de Plantão</h1>
@@ -397,13 +343,13 @@ export default function RelatoriosPage() {
           </button>
         </div>
 
-        {/* 2. Cards de estatísticas */}
+        {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total',    val: total,         color: 'var(--accent3)', icon: <ClipboardList size={14}/> },
-            { label: 'Normal',   val: stats.normal,  color: 'var(--green)',   icon: <CheckCircle2 size={14}/> },
-            { label: 'Alerta',   val: stats.alerta,  color: 'var(--yellow)',  icon: <AlertTriangle size={14}/> },
-            { label: 'Crítico',  val: stats.critico, color: 'var(--red)',     icon: <AlertOctagon size={14}/> },
+            { label: 'Total',       val: total,        color: 'var(--accent3)', icon: <ClipboardList size={14}/> },
+            { label: 'Normal',      val: stats.normal,  color: 'var(--green)',   icon: <CheckCircle2 size={14}/> },
+            { label: 'Alerta',      val: stats.alerta,  color: 'var(--yellow)',  icon: <AlertTriangle size={14}/> },
+            { label: 'Crítico',     val: stats.critico, color: 'var(--red)',     icon: <AlertOctagon size={14}/> },
           ].map(s => (
             <div key={s.label} className="rounded-2xl p-4"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -416,21 +362,20 @@ export default function RelatoriosPage() {
           ))}
         </div>
 
-        {/* 3. Barra de busca e ações */}
+        {/* Search + filter bar */}
         <div className="space-y-3">
           <div className="flex gap-2">
-            {/* Campo de busca livre */}
+            {/* search */}
             <div className="flex-1 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted2)' }}/>
               <input value={busca} onChange={e => setBusca(e.target.value)}
                 placeholder="Buscar por plantonista ou observações..."
                 className="pl-9 pr-4 py-2.5 text-sm rounded-xl"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border2)' }}/>
-              {/* X para limpar a busca — só aparece quando tem texto */}
               {busca && <button onClick={() => setBusca('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted2)' }}><X size={13}/></button>}
             </div>
 
-            {/* Botão de filtros — fica roxo quando há filtros ativos */}
+            {/* filter toggle */}
             <button onClick={() => setShowFilters(v => !v)}
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition-all"
               style={{
@@ -440,14 +385,13 @@ export default function RelatoriosPage() {
               }}>
               <Filter size={14}/>
               <span className="hidden sm:inline text-sm">Filtros</span>
-              {/* Bolinha com número de filtros ativos */}
               {activeCount > 0 && (
                 <span className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
                   style={{ background: 'var(--accent)', color: '#fff' }}>{activeCount}</span>
               )}
             </button>
 
-            {/* Botão ordenação — alterna entre mais recentes e mais antigos */}
+            {/* sort */}
             <button onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
               title={sortDir === 'desc' ? 'Mais recentes primeiro' : 'Mais antigos primeiro'}
               className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm"
@@ -456,21 +400,20 @@ export default function RelatoriosPage() {
               <span className="hidden sm:inline text-xs">{sortDir === 'desc' ? 'Recentes' : 'Antigos'}</span>
             </button>
 
-            {/* Botão atualizar — busca os dados novamente no banco */}
+            {/* refresh */}
             <button onClick={fetchData}
               className="px-3 py-2.5 rounded-xl border"
               style={{ background: 'var(--surface)', borderColor: 'var(--border2)', color: 'var(--muted)' }}>
-              {/* Ícone gira enquanto está carregando */}
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''}/>
             </button>
           </div>
 
-          {/* 4. Painel de filtros — só aparece quando showFilters === true */}
+          {/* Expanded filters */}
           {showFilters && (
             <div className="rounded-2xl p-4 space-y-4 fade-in"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Filtro por status — botões visuais coloridos */}
+                {/* Status filter - visual */}
                 <div>
                   <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text2)' }}>Status</label>
                   <div className="flex gap-1.5 flex-wrap">
@@ -494,7 +437,7 @@ export default function RelatoriosPage() {
                   </div>
                 </div>
 
-                {/* Filtro por nome do plantonista */}
+                {/* Plantonista */}
                 <div>
                   <label className="text-xs font-medium mb-1.5 flex items-center gap-1" style={{ color: 'var(--text2)' }}>
                     <User size={11}/> Plantonista
@@ -506,7 +449,7 @@ export default function RelatoriosPage() {
                 </div>
               </div>
 
-              {/* Filtro por período de datas */}
+              {/* Date range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium mb-1.5 flex items-center gap-1" style={{ color: 'var(--text2)' }}>
@@ -526,7 +469,6 @@ export default function RelatoriosPage() {
                 </div>
               </div>
 
-              {/* Botão limpar filtros — só aparece quando há filtros ativos */}
               {activeCount > 0 && (
                 <button onClick={clearFilters}
                   className="text-xs flex items-center gap-1.5 transition-colors"
@@ -540,9 +482,9 @@ export default function RelatoriosPage() {
           )}
         </div>
 
-        {/* 5. Tabela de relatórios */}
+        {/* Table */}
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
-          {/* Cabeçalho da tabela */}
+          {/* Table header */}
           <div className="grid gap-2 px-4 py-3"
             style={{ gridTemplateColumns: '72px 1fr 110px 32px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted2)' }}>#</span>
@@ -551,15 +493,13 @@ export default function RelatoriosPage() {
             <span/>
           </div>
 
-          {/* Estados da tabela: carregando / vazia / com dados */}
+          {/* Rows */}
           {loading ? (
-            // Estado carregando
             <div className="flex items-center justify-center py-16 gap-3" style={{ color: 'var(--muted)' }}>
               <Loader2 size={20} className="animate-spin"/>
               <span className="text-sm">Carregando relatórios...</span>
             </div>
           ) : relatorios.length === 0 ? (
-            // Estado vazio — mensagem diferente se há filtros ou não
             <div className="flex flex-col items-center py-16 gap-3 text-center px-4">
               <FileText size={32} style={{ color: 'var(--muted2)' }}/>
               <p className="text-sm font-medium" style={{ color: 'var(--text2)' }}>Nenhum relatório encontrado</p>
@@ -573,20 +513,18 @@ export default function RelatoriosPage() {
               )}
             </div>
           ) : (
-            // Lista de relatórios — cada um é um RelatorioRow expansível
             <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {relatorios.map(r => <RelatorioRow key={r.id} r={r} onPrint={handlePrint}/>)}
             </div>
           )}
 
-          {/* 6. Rodapé com contagem e botão exportar */}
+          {/* Footer */}
           {relatorios.length > 0 && (
             <div className="px-4 py-3 flex items-center justify-between"
               style={{ borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
               <span className="text-xs" style={{ color: 'var(--muted2)' }}>
                 {relatorios.length} de {total} relatórios
               </span>
-              {/* Exportar lista — gera HTML com tabela de todos os resultados filtrados */}
               <button onClick={handlePrintList}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all no-print"
                 style={{ border: '1px solid var(--border2)', color: 'var(--text2)' }}
