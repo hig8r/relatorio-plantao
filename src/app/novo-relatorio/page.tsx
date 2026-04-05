@@ -7,35 +7,16 @@ import { Ocorrencia, StatusPlantao, SeveridadeOcorrencia } from '@/types';
 import {
   Plus, Trash2, CheckCircle2, AlertTriangle, AlertOctagon,
   Loader2, ChevronRight, ChevronLeft, Clock, Check,
-  FileText, Users, AlertCircle, StickyNote, AlarmClock,
+  FileText, Users, AlertCircle, StickyNote,
 } from 'lucide-react';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
-const HORA_INICIO = '08:00';
-const HORA_FIM    = '13:00';
-
-const gerarHorarios = (inicio: string, fim: string) => {
-  const opts: string[] = [];
-  const [hI, mI] = inicio.split(':').map(Number);
-  const [hF, mF] = fim.split(':').map(Number);
-  let h = hI, m = mI;
-  while (h < hF || (h === hF && m <= mF)) {
-    opts.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-    m += 5;
-    if (m >= 60) { m = 0; h++; }
-  }
-  return opts;
-};
-
-const HORARIOS_PLANTAO  = gerarHorarios('08:00', '13:00');
-const HORARIOS_ESTENDIDO = gerarHorarios('13:05', '23:55');
-
+/* ── shared field wrapper ── */
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
@@ -47,6 +28,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
+/* ── step indicator ── */
 const STEPS = [
   { label: 'Identificação', icon: <Users size={13}/> },
   { label: 'Ocorrências',   icon: <AlertCircle size={13}/> },
@@ -88,6 +70,7 @@ function StepBar({ current }: { current: number }) {
   );
 }
 
+/* ── status selector ── */
 function StatusSelector({ value, onChange }: { value: StatusPlantao; onChange: (v: StatusPlantao) => void }) {
   const opts: { v: StatusPlantao; icon: React.ReactNode; color: string; bg: string; bd: string; desc: string }[] = [
     { v: 'Normal',  icon: <CheckCircle2 size={16}/>, color: 'var(--green)',  bg: 'var(--green-bg)',  bd: 'var(--green-bd)',  desc: 'Plantão sem intercorrências' },
@@ -115,87 +98,40 @@ function StatusSelector({ value, onChange }: { value: StatusPlantao; onChange: (
   );
 }
 
-function HorarioSelect({
-  value, onChange, horarios, placeholder
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  horarios: string[];
-  placeholder?: string;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className="px-3 py-2 text-sm cursor-pointer"
-      style={{
-        background: 'var(--surface2)',
-        border: '1.5px solid var(--border2)',
-        borderRadius: 10,
-        color: 'var(--text)',
-        width: '100%',
-      }}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {horarios.map(h => (
-        <option key={h} value={h}>{h}</option>
-      ))}
-    </select>
-  );
-}
-
+/* ════════════════ PAGE ════════════════ */
 export default function NovoRelatorioPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [savedNumero, setSavedNumero] = useState<number | null>(null);
 
+  /* ── form state ── */
   const [data, setData] = useState(today());
   const [plantonista, setPlantonista] = useState('');
   const [status, setStatus] = useState<StatusPlantao>('Normal');
-
-  const [plantaoEstendido, setPlantaoEstendido] = useState(false);
-  const [horaFimReal, setHoraFimReal] = useState('');
-  const [motivoExtensao, setMotivoExtensao] = useState('');
-
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
+  const [observacoes, setObservacoes] = useState('');
+
+  /* ── new occurrence form ── */
   const [addingOc, setAddingOc] = useState(false);
   const [ocForm, setOcForm] = useState<Omit<Ocorrencia,'id'>>({
-    horario: HORA_INICIO, titulo: '', descricao: '', severidade: 'Baixa',
+    horario: nowHHMM(), titulo: '', descricao: '', severidade: 'Baixa',
   });
-
-  const [observacoes, setObservacoes] = useState('');
 
   function addOcorrencia() {
     if (!ocForm.titulo.trim()) return;
     setOcorrencias(p => [...p, { ...ocForm, id: uid(), titulo: ocForm.titulo.trim() }]);
-    setOcForm({ horario: HORA_INICIO, titulo: '', descricao: '', severidade: 'Baixa' });
+    setOcForm({ horario: nowHHMM(), titulo: '', descricao: '', severidade: 'Baixa' });
     setAddingOc(false);
   }
-
-  const horaFimFinal = plantaoEstendido && horaFimReal ? horaFimReal : HORA_FIM;
 
   async function handleSubmit() {
     setSaving(true);
     try {
       const { data: row, error } = await supabase
         .from('relatorios')
-        .insert({
-          data,
-          hora_inicio: HORA_INICIO,
-          hora_fim: horaFimFinal,
-          plantonista: plantonista.trim(),
-          status,
-          ocorrencias,
-          observacoes: [
-            observacoes.trim(),
-            plantaoEstendido && horaFimReal
-              ? `⏰ Plantão estendido até ${horaFimReal}${motivoExtensao ? ` — ${motivoExtensao.trim()}` : ''}`
-              : ''
-          ].filter(Boolean).join('\n\n'),
-        })
-        .select('numero')
-        .single();
+        .insert({ data, hora_inicio: '08:00', hora_fim: '13:00', plantonista: plantonista.trim(), status, ocorrencias, observacoes: observacoes.trim() })
+        .select('numero').single();
       if (error) throw error;
       setSavedNumero(row.numero);
       setStep(5);
@@ -209,11 +145,10 @@ export default function NovoRelatorioPage() {
 
   function resetForm() {
     setStep(1); setSavedNumero(null); setPlantonista(''); setData(today());
-    setStatus('Normal'); setOcorrencias([]); setObservacoes('');
-    setAddingOc(false); setPlantaoEstendido(false); setHoraFimReal(''); setMotivoExtensao('');
-    setOcForm({ horario: HORA_INICIO, titulo: '', descricao: '', severidade: 'Baixa' });
+    setStatus('Normal'); setOcorrencias([]); setObservacoes(''); setAddingOc(false);
   }
 
+  /* ──────── STEP 5 — SUCCESS ──────── */
   if (step === 5) return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Header/>
@@ -253,87 +188,43 @@ export default function NovoRelatorioPage() {
     </div>
   );
 
+  /* ──────── MAIN FORM ──────── */
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Header/>
       <main className="max-w-2xl mx-auto px-4 py-8">
         <StepBar current={step}/>
 
+        {/* ══ STEP 1 — Identificação ══ */}
         {step === 1 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-5"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
 
+              {/* Date */}
               <Field label="Data do Plantão" required>
-                <input
-                  type="date"
-                  value={data}
-                  onChange={e => setData(e.target.value)}
-                  className="px-3 py-2.5 text-sm"
-                />
+                <input type="date" value={data} onChange={e => setData(e.target.value)}
+                  className="px-3 py-2.5 text-sm" />
               </Field>
 
-              <div>
-                <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3"
-                  style={{ background: 'var(--surface3)', border: '1px solid var(--border)' }}>
-                  <Clock size={16} style={{ color: 'var(--accent2)' }}/>
-                  <div className="flex-1">
-                    <p className="text-xs font-medium" style={{ color: 'var(--text2)' }}>Horário do Plantão</p>
-                    <p className="text-lg font-bold mt-0.5" style={{ color: 'var(--accent3)' }}>
-                      08:00 → {plantaoEstendido && horaFimReal ? horaFimReal : '13:00'}
-                      {plantaoEstendido && horaFimReal && (
-                        <span className="text-xs font-normal ml-2" style={{ color: 'var(--yellow)' }}>estendido</span>
-                      )}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setPlantaoEstendido(v => !v)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-                    style={{
-                      background: plantaoEstendido ? 'var(--yellow-bg)' : 'var(--surface2)',
-                      color: plantaoEstendido ? 'var(--yellow)' : 'var(--muted)',
-                      border: `1px solid ${plantaoEstendido ? 'var(--yellow-bd)' : 'var(--border2)'}`,
-                    }}>
-                    <AlarmClock size={12}/>
-                    {plantaoEstendido ? 'Cancelar extensão' : 'Estender plantão'}
-                  </button>
+              {/* Time — fixed, just display */}
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ background: 'var(--surface3)', border: '1px solid var(--border)' }}>
+                <Clock size={16} style={{ color: 'var(--accent2)' }}/>
+                <div>
+                  <p className="text-xs font-medium" style={{ color: 'var(--text2)' }}>Horário do Plantão</p>
+                  <p className="text-lg font-bold mt-0.5" style={{ color: 'var(--accent3)' }}>08:00 → 13:00</p>
                 </div>
-
-                {plantaoEstendido && (
-                  <div className="rounded-xl p-4 space-y-3 fade-in"
-                    style={{ background: 'var(--yellow-bg)', border: '1px solid var(--yellow-bd)' }}>
-                    <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--yellow)' }}>
-                      <AlarmClock size={12}/> Plantão estendido além das 13:00
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="Novo horário de encerramento">
-                        <HorarioSelect
-                          value={horaFimReal}
-                          onChange={setHoraFimReal}
-                          horarios={HORARIOS_ESTENDIDO}
-                          placeholder="Selecione..."
-                        />
-                      </Field>
-                      <Field label="Motivo da extensão">
-                        <input
-                          type="text"
-                          value={motivoExtensao}
-                          onChange={e => setMotivoExtensao(e.target.value)}
-                          placeholder="Ex: Aguardando técnico"
-                          className="px-3 py-2 text-sm"
-                        />
-                      </Field>
-                    </div>
-                  </div>
-                )}
               </div>
 
+              {/* Plantonista */}
               <Field label="Nome do Plantonista / Responsável" required>
                 <input type="text" value={plantonista} onChange={e => setPlantonista(e.target.value)}
                   placeholder="Ex: Higor"
                   className="px-3 py-2.5 text-sm" />
               </Field>
 
+              {/* Status */}
               <div>
                 <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text2)' }}>
                   Status Geral do Plantão <span style={{ color: 'var(--accent2)' }}>*</span>
@@ -343,9 +234,7 @@ export default function NovoRelatorioPage() {
             </div>
 
             <div className="flex justify-end">
-              <button
-                onClick={() => setStep(2)}
-                disabled={!plantonista.trim() || !data || (plantaoEstendido && !horaFimReal)}
+              <button onClick={() => setStep(2)} disabled={!plantonista.trim() || !data}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'var(--accent)' }}>
                 Registrar Ocorrências <ChevronRight size={15}/>
@@ -354,6 +243,7 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
+        {/* ══ STEP 2 — Ocorrências ══ */}
         {step === 2 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-4"
@@ -362,7 +252,7 @@ export default function NovoRelatorioPage() {
                 <div>
                   <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Ocorrências e Incidentes</h2>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                    Horários disponíveis: 08:00 às {horaFimFinal}
+                    Registre tudo que aconteceu. Se o plantão foi tranquilo, pode avançar.
                   </p>
                 </div>
                 {ocorrencias.length > 0 && (
@@ -373,6 +263,7 @@ export default function NovoRelatorioPage() {
                 )}
               </div>
 
+              {/* Empty state */}
               {ocorrencias.length === 0 && !addingOc && (
                 <div className="rounded-xl py-8 flex flex-col items-center gap-2"
                   style={{ background: 'var(--surface3)', border: '1px dashed var(--border2)' }}>
@@ -382,6 +273,7 @@ export default function NovoRelatorioPage() {
                 </div>
               )}
 
+              {/* Occurrence list */}
               {ocorrencias.length > 0 && (
                 <div className="space-y-2">
                   {ocorrencias.map(oc => (
@@ -418,6 +310,7 @@ export default function NovoRelatorioPage() {
                 </div>
               )}
 
+              {/* Add form */}
               {addingOc ? (
                 <div className="rounded-xl p-4 space-y-3 fade-in"
                   style={{ background: 'var(--surface3)', border: '1.5px solid var(--accent)', borderRadius: 14 }}>
@@ -430,16 +323,9 @@ export default function NovoRelatorioPage() {
                           className="px-3 py-2 text-sm" autoFocus />
                       </Field>
                     </div>
-                    <Field label="Horário (dentro do plantão)">
-                      <HorarioSelect
-                        value={ocForm.horario}
-                        onChange={v => setOcForm(p => ({ ...p, horario: v }))}
-                        horarios={
-                          plantaoEstendido && horaFimReal
-                            ? gerarHorarios('08:00', horaFimReal)
-                            : HORARIOS_PLANTAO
-                        }
-                      />
+                    <Field label="Horário da ocorrência">
+                      <input type="time" value={ocForm.horario} onChange={e => setOcForm(p => ({ ...p, horario: e.target.value }))}
+                        className="px-3 py-2 text-sm" />
                     </Field>
                     <Field label="Severidade">
                       <select value={ocForm.severidade} onChange={e => setOcForm(p => ({ ...p, severidade: e.target.value as SeveridadeOcorrencia }))}
@@ -457,7 +343,7 @@ export default function NovoRelatorioPage() {
                   </div>
                   <div className="flex gap-2 justify-end pt-1">
                     <button onClick={() => setAddingOc(false)}
-                      className="px-3 py-1.5 rounded-lg text-sm"
+                      className="px-3 py-1.5 rounded-lg text-sm transition-colors"
                       style={{ color: 'var(--muted)' }}>Cancelar</button>
                     <button onClick={addOcorrencia} disabled={!ocForm.titulo.trim()}
                       className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold text-white disabled:opacity-40"
@@ -478,7 +364,7 @@ export default function NovoRelatorioPage() {
             </div>
 
             <div className="flex justify-between">
-              <button onClick={() => setStep(1)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm" style={{ color: 'var(--muted)' }}>
+              <button onClick={() => setStep(1)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm transition-colors" style={{ color: 'var(--muted)' }}>
                 <ChevronLeft size={15}/> Voltar
               </button>
               <button onClick={() => setStep(3)} className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--accent)' }}>
@@ -488,6 +374,7 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
+        {/* ══ STEP 3 — Observações ══ */}
         {step === 3 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-4"
@@ -521,6 +408,7 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
+        {/* ══ STEP 4 — Revisão ══ */}
         {step === 4 && (
           <div className="fade-up space-y-4">
             <div>
@@ -528,10 +416,13 @@ export default function NovoRelatorioPage() {
               <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>Revise antes de salvar permanentemente.</p>
             </div>
 
+            {/* Summary card */}
             <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+              {/* Status bar */}
               <div className="h-1.5"
                 style={{ background: status === 'Normal' ? 'var(--green)' : status === 'Alerta' ? 'var(--yellow)' : 'var(--red)' }}/>
               <div className="p-5 space-y-4" style={{ background: 'var(--surface)' }}>
+                {/* Header row */}
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>Plantonista</p>
@@ -550,6 +441,7 @@ export default function NovoRelatorioPage() {
                   </span>
                 </div>
 
+                {/* Date + time */}
                 <div className="flex gap-6 text-sm">
                   <div>
                     <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>Data</p>
@@ -557,23 +449,11 @@ export default function NovoRelatorioPage() {
                   </div>
                   <div>
                     <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>Horário</p>
-                    <p style={{ color: 'var(--text)' }}>
-                      08:00 → {horaFimFinal}
-                      {plantaoEstendido && horaFimReal && (
-                        <span className="text-xs ml-2" style={{ color: 'var(--yellow)' }}>⚠ estendido</span>
-                      )}
-                    </p>
+                    <p style={{ color: 'var(--text)' }}>08:00 → 13:00</p>
                   </div>
                 </div>
 
-                {plantaoEstendido && horaFimReal && motivoExtensao && (
-                  <div className="rounded-xl px-3 py-2 text-xs"
-                    style={{ background: 'var(--yellow-bg)', color: 'var(--yellow)', border: '1px solid var(--yellow-bd)' }}>
-                    <AlarmClock size={11} className="inline mr-1"/>
-                    Extensão: {motivoExtensao}
-                  </div>
-                )}
-
+                {/* Ocorrências summary */}
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted2)' }}>
                     Ocorrências ({ocorrencias.length})
@@ -599,6 +479,7 @@ export default function NovoRelatorioPage() {
                   )}
                 </div>
 
+                {/* Observações */}
                 {observacoes && (
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                     <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted2)' }}>Observações</p>
