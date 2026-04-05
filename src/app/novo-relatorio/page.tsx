@@ -12,17 +12,14 @@ import {
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-// Retorna hoje no formato YYYY-MM-DD usando horário LOCAL (evita bug de fuso horário UTC)
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
-// Horário padrão de início das ocorrências
 const HORA_INICIO = '08:00';
 const HORA_FIM    = '13:00';
 
-// Gera opções de horário de 08:00 a 13:00 em intervalos de 5 minutos
 const gerarHorarios = (inicio: string, fim: string) => {
   const opts: string[] = [];
   const [hI, mI] = inicio.split(':').map(Number);
@@ -118,7 +115,6 @@ function StatusSelector({ value, onChange }: { value: StatusPlantao; onChange: (
   );
 }
 
-// Seletor de horário em formato 24h (dropdown com opções de 5 em 5 min)
 function HorarioSelect({
   value, onChange, horarios, placeholder
 }: {
@@ -154,24 +150,20 @@ export default function NovoRelatorioPage() {
   const [saving, setSaving] = useState(false);
   const [savedNumero, setSavedNumero] = useState<number | null>(null);
 
-  // Etapa 1
   const [data, setData] = useState(today());
   const [plantonista, setPlantonista] = useState('');
   const [status, setStatus] = useState<StatusPlantao>('Normal');
 
-  // Extensão de plantão além das 13h
   const [plantaoEstendido, setPlantaoEstendido] = useState(false);
   const [horaFimReal, setHoraFimReal] = useState('');
   const [motivoExtensao, setMotivoExtensao] = useState('');
 
-  // Etapa 2
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [addingOc, setAddingOc] = useState(false);
   const [ocForm, setOcForm] = useState<Omit<Ocorrencia,'id'>>({
     horario: HORA_INICIO, titulo: '', descricao: '', severidade: 'Baixa',
   });
 
-  // Etapa 3
   const [observacoes, setObservacoes] = useState('');
 
   function addOcorrencia() {
@@ -186,7 +178,6 @@ export default function NovoRelatorioPage() {
   async function handleSubmit() {
     setSaving(true);
     try {
-      // Salva a data exatamente como string, sem converter para UTC
       const { data: row, error } = await supabase
         .from('relatorios')
         .insert({
@@ -268,14 +259,12 @@ export default function NovoRelatorioPage() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <StepBar current={step}/>
 
-        {/* ══ ETAPA 1 — IDENTIFICAÇÃO ══ */}
         {step === 1 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-5"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
 
               <Field label="Data do Plantão" required>
-                {/* Input date com correção de fuso: lê o valor como string local */}
                 <input
                   type="date"
                   value={data}
@@ -284,7 +273,6 @@ export default function NovoRelatorioPage() {
                 />
               </Field>
 
-              {/* Horário fixo — exibição + botão de extensão */}
               <div>
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3"
                   style={{ background: 'var(--surface3)', border: '1px solid var(--border)' }}>
@@ -298,7 +286,6 @@ export default function NovoRelatorioPage() {
                       )}
                     </p>
                   </div>
-                  {/* Botão para estender o plantão além das 13h */}
                   <button
                     onClick={() => setPlantaoEstendido(v => !v)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
@@ -312,7 +299,6 @@ export default function NovoRelatorioPage() {
                   </button>
                 </div>
 
-                {/* Campos de extensão — só aparecem se ativado */}
                 {plantaoEstendido && (
                   <div className="rounded-xl p-4 space-y-3 fade-in"
                     style={{ background: 'var(--yellow-bg)', border: '1px solid var(--yellow-bd)' }}>
@@ -368,7 +354,6 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
-        {/* ══ ETAPA 2 — OCORRÊNCIAS ══ */}
         {step === 2 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-4"
@@ -446,7 +431,6 @@ export default function NovoRelatorioPage() {
                       </Field>
                     </div>
                     <Field label="Horário (dentro do plantão)">
-                      {/* Dropdown 24h limitado ao período do plantão */}
                       <HorarioSelect
                         value={ocForm.horario}
                         onChange={v => setOcForm(p => ({ ...p, horario: v }))}
@@ -504,7 +488,6 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
-        {/* ══ ETAPA 3 — OBSERVAÇÕES ══ */}
         {step === 3 && (
           <div className="fade-up space-y-5">
             <div className="rounded-2xl p-6 space-y-4"
@@ -538,7 +521,6 @@ export default function NovoRelatorioPage() {
           </div>
         )}
 
-        {/* ══ ETAPA 4 — REVISÃO ══ */}
         {step === 4 && (
           <div className="fade-up space-y-4">
             <div>
@@ -584,7 +566,6 @@ export default function NovoRelatorioPage() {
                   </div>
                 </div>
 
-                {/* Motivo da extensão */}
                 {plantaoEstendido && horaFimReal && motivoExtensao && (
                   <div className="rounded-xl px-3 py-2 text-xs"
                     style={{ background: 'var(--yellow-bg)', color: 'var(--yellow)', border: '1px solid var(--yellow-bd)' }}>
