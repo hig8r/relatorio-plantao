@@ -13,13 +13,12 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// ─────────────────────────────────────────────────────────────
 // COMPONENTE: StatusBadge
 // Exibe um badge colorido com ícone para o status do plantão
 //   Normal  → verde  com ✓
 //   Alerta  → amarelo com ⚠
 //   Crítico → vermelho com ⊗
-// ─────────────────────────────────────────────────────────────
+
 function StatusBadge({ s }: { s: StatusPlantao }) {
   const map = {
     'Normal':  { bg: 'var(--green-bg)',  color: 'var(--green)',  bd: 'var(--green-bd)',  icon: <CheckCircle2 size={10}/> },
@@ -35,13 +34,12 @@ function StatusBadge({ s }: { s: StatusPlantao }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
 // COMPONENTE: PrintView
-// Versão do relatório formatada para impressão
+// Versão do relatório formatada para impressão (preciso ajustar)
 // Fica invisível na tela (display:none) e só aparece ao imprimir
 // Contém: número, data, horário, plantonista, status,
 //         lista de ocorrências e observações
-// ─────────────────────────────────────────────────────────────
+
 function PrintView({ r }: { r: Relatorio }) {
   return (
     <div className="print-only" style={{ display: 'none', fontFamily: 'Arial, sans-serif', color: '#000', padding: 0 }}>
@@ -79,21 +77,12 @@ function PrintView({ r }: { r: Relatorio }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
 // COMPONENTE: RelatorioRow
 // Uma linha da tabela que pode ser expandida ao clicar
-//
-// Fechada, exibe:
-//   → número (#0001), data, plantonista, horário, status, badge "X altas"
-//
-// Aberta (expandida), exibe:
-//   → lista completa de ocorrências com severidade e horário
-//   → observações gerais
-//   → botão "Imprimir este relatório"
-//
-// Prop onPrint → função chamada ao clicar em imprimir,
-//               abre uma janela nova formatada para impressão
-// ─────────────────────────────────────────────────────────────
+// Fechada, exibe: número (#0001), data, plantonista, horário, status, badge "X altas"
+// Aberta (expandida), exibe: lista completa de ocorrências com severidade e horário, observações gerais e botão "Imprimir este relatório"
+// Prop onPrint → função chamada ao clicar em imprimir, abre uma janela nova formatada para impressão
+
 function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) => void }) {
   const [open, setOpen] = useState(false);
   // Conta quantas ocorrências têm severidade Alta para mostrar o badge vermelho
@@ -230,17 +219,15 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
 // PÁGINA PRINCIPAL: RelatoriosPage
 // Tela de consulta de todos os relatórios salvos
-//
 // Estados principais:
 //   relatorios       → lista de relatórios carregados do banco
 //   loading          → true enquanto busca os dados
 //   total            → total de registros no banco (incluindo filtrados)
 //   showFilters      → controla se o painel de filtros está aberto
 //   printRef         → referência ao relatório sendo impresso
-//
+
 // Filtros disponíveis:
 //   busca            → busca por texto (plantonista ou observações)
 //   filtroStatus     → Normal / Alerta / Crítico / todos
@@ -248,7 +235,7 @@ function RelatorioRow({ r, onPrint }: { r: Relatorio; onPrint: (r: Relatorio) =>
 //   dataInicio       → data mínima do período
 //   dataFim          → data máxima do período
 //   sortDir          → 'desc' (mais recentes) ou 'asc' (mais antigos)
-// ─────────────────────────────────────────────────────────────
+
 export default function RelatoriosPage() {
   const router = useRouter();
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -382,7 +369,6 @@ export default function RelatoriosPage() {
     ocTotal: relatorios.reduce((a, r) => a + r.ocorrencias.length, 0),
   };
 
-  // ─────────────────────────────────────────────────────────────
   // RENDER DA PÁGINA
   // Estrutura:
   //   1. Título + botão "Novo Relatório"
@@ -390,8 +376,7 @@ export default function RelatoriosPage() {
   //   3. Barra de busca + botões (Filtros, Ordenar, Atualizar)
   //   4. Painel de filtros expansível (Status, Plantonista, Datas)
   //   5. Tabela com linhas expansíveis
-  //   6. Rodapé com contagem + botão "Exportar lista"
-  // ─────────────────────────────────────────────────────────────
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Header/>
