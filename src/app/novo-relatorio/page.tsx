@@ -11,10 +11,9 @@ import {
 } from 'lucide-react';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-const today = () => new Date().toISOString().split('T')[0];
-const nowHHMM = () => {
+const today = () => {
   const d = new Date();
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
 /* ── shared field wrapper ── */
